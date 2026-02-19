@@ -116,18 +116,22 @@ public:
       uint8_t x = (opcode & 0x0F00) >> 8;
       uint8_t y = (opcode & 0x00F0) >> 8;
       switch (opcode & 0x000F) {
-      case 0x0: // 8xy0 -LD Vx, Vy
+      case 0x0: { // 8xy0 -LD Vx, Vy
         v[x] = v[y];
         break;
-      case 0x1: // 8xy0 -LD Vx, Vy
+      }
+      case 0x1: { // 8xy0 -LD Vx, Vy
         v[x] |= v[y];
         break;
-      case 0x2: // 8xy0 -LD Vx, Vy
+      }
+      case 0x2: { // 8xy0 -LD Vx, Vy
         v[x] &= v[y];
         break;
-      case 0x3:
+      }
+      case 0x3: {
         v[x] ^= v[y];
         break;
+      }
       case 0x4: { // 8xy4: ADD Vx, Vy
         uint16_t sum = v[x] + v[y];
         // If the sum is greater than 255 (0xFF), there is a carry
@@ -155,9 +159,39 @@ public:
         v[x] >>= 1;
         break;
       }
-      case 0x7: {
+      case 0x7: { // 8xy7 SUBN Vx, Vy
+        if (v[y] > v[x]) {
+          v[0xF] = 1;
+        } else {
+          v[0xF] = 0;
+        }
+        v[x] = v[y] - v[x];
+        break;
+      }
+      case 0xE: { // 8xyE - SHL Vx {, Vy}
+        uint8_t msb = (v[x] & 0x80) >> 7;
+        v[0xF] = msb;
+        v[x] <<= 1;
+        break;
       }
       }
+    }
+    case 0x9000: {
+      uint8_t x = (opcode & 0x0F00) >> 8;
+      uint8_t y = (opcode & 0x00F0) >> 8;
+      if (v[x] != v[y]) {
+        pc += 2;
+      }
+      break;
+    }
+    case 0xA000: {
+      uint16_t nnn = opcode & 0x0FFF;
+      index = nnn;
+      break;
+    }
+    case 0xB000: {
+      uint16_t nnn = opcode & 0x0FFF;
+      pc = nnn + v[0];
     }
     default:
       cout << "unknown opcode: 0x" << opcode << "\n" << endl;
