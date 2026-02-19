@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 using namespace std;
@@ -192,6 +193,112 @@ public:
     case 0xB000: {
       uint16_t nnn = opcode & 0x0FFF;
       pc = nnn + v[0];
+      break;
+    }
+    case 0xC000: {
+      uint8_t x = (opcode & 0x0F00) >> 8;
+      uint8_t kk = (opcode & 0x00FF);
+      uint8_t random_byte = rand() % 256;
+      v[x] = random_byte & kk;
+      break;
+    }
+    case 0xD000: {
+      uint8_t xPos = v[(opcode & 0x0F00) >> 8] % 64;
+      uint8_t yPos = v[(opcode & 0x00F0) >> 4] % 32;
+      uint8_t height = (opcode & 0x000F);
+      v[0xF] = 0;
+      for (int row = 0; row < height; row++) {
+        uint8_t spriteByte = memory[index + row];
+        for (int col = 0; col < 8; col++) {
+          if ((spriteByte & (0x80 >> col)) != 0) {
+            int screenindex = (xPos + col) % 64 + ((yPos + row) % 32) * 64;
+            if (gfx[screenindex] == 1) {
+              v[0xF] = 1;
+            }
+            gfx[screenindex] ^= 1;
+          }
+        }
+      }
+      // Note: You'll need to tell your graphics library (SDL/Raylib) to redraw
+      // here drawFlag = true
+      break;
+    }
+    case 0xE000: {
+      uint8_t x = (opcode & 0x0F00) >> 8;
+      uint8_t variant = (opcode & 0x00FF);
+
+      switch (variant) {
+      case 0x9E: { // Ex9E: Skip if key pressed
+        if (key[v[x]] != 0) {
+          pc += 2;
+        }
+        break;
+      }
+
+      case 0xA1: { // ExA1: Skip if key NOT pressed
+        if (key[v[x]] == 0) {
+          pc += 2;
+        }
+        break;
+      }
+      }
+      break;
+    }
+    case 0xF000: {
+      uint8_t x = (opcode & 0x0F00) >> 8;
+      switch (opcode & 0x00FF) {
+
+      case 0x07: // Fx07: Set Vx to Delay Timer
+        v[x] = delay_timer;
+        break;
+
+      case 0x0A: { // Fx0A: Wait for key press (BLOCKING)
+        bool keyPressed = false;
+        for (int i = 0; i < 16; ++i) {
+          if (key[i] != 0) {
+            v[x] = i;
+            keyPressed = true;
+            break;
+          }
+        }
+        if (!keyPressed)
+          return; // "Freeze" the PC by returning without incrementing
+        break;
+      }
+
+      case 0x15: // Fx15: Set Delay Timer
+        delay_timer = v[x];
+        break;
+
+      case 0x18: // Fx18: Set Sound Timer
+        sound_timer = v[x];
+        break;
+
+      case 0x1E: // Fx1E: Add Vx to I
+        index += v[x];
+        break;
+
+      case 0x29:          // Fx29: Set I to Font Character
+        index = v[x] * 5; // Each font char is 5 bytes tall
+        break;
+
+      case 0x33: // Fx33: Binary-Coded Decimal (The math "trick")
+        memory[index] = v[x] / 100;           // Hundreds place
+        memory[index + 1] = (v[x] / 10) % 10; // Tens place
+        memory[index + 2] = v[x] % 10;        // Ones place
+        break;
+
+      case 0x55: // Fx55: Store registers in memory
+        for (int i = 0; i <= x; ++i)
+          memory[index + i] = v[i];
+        break;
+
+      case 0x65: // Fx65: Load registers from memory
+        for (int i = 0; i <= x; ++i)
+          v[i] = memory[index + i];
+        break;
+      }
+      break;
     }
     default:
       cout << "unknown opcode: 0x" << opcode << "\n" << endl;
