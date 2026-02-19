@@ -20,6 +20,7 @@ public:
   unsigned char key[16];
   bool drawFlag;
   unsigned char fontset[80] = {
+      // this is the display part referrer to 2.4 to the cowgods pdf
       0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
       0x20, 0x60, 0x20, 0x20, 0x70, // 1
       0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -51,7 +52,7 @@ public:
     memset(stack, 0, sizeof(stack));
     memset(gfx, 0, sizeof(gfx));
 
-    for (int i = 0; i < 80; ++i) {
+    for (int i = 0; i < 80; ++i) { // its 80 cuz thats the size of the fontset
       memory[i] = fontset[i];
     }
   }
@@ -103,15 +104,14 @@ public:
     case 0x3000: { // 3xkk - SE Vx, byte
       uint8_t x = (opcode & 0x0F00) >> 8;
       uint8_t kk = (opcode & 0x00FF);
-      if (v[x] == kk) { // Skip next instruction if Vx = kk.
-        pc += 2;
+      if (v[x] == kk) {
       }
       break;
     }
     case 0x4000: { // 4xkk - SNE Vx, byte
       uint8_t x = (opcode & 0x0F00) >> 8;
       uint8_t kk = (opcode & 0x00FF);
-      if (v[x] != kk) { // Skip next instruction if Vx != kk.
+      if (v[x] != kk) {
         pc += 2;
       }
       break;
@@ -119,7 +119,7 @@ public:
     case 0x5000: { // 5xy0 - SE Vx, Vy
       uint8_t x = (opcode & 0x0F00) >> 8;
       uint8_t y = (opcode & 0x00F0) >> 4;
-      if (v[x] == v[y]) { // Skip next instruction if Vx = Vy.
+      if (v[x] == v[y]) {
         pc += 2;
       }
       break;
@@ -158,13 +158,11 @@ public:
       }
       case 0x4: { // 8xy4: ADD Vx, Vy
         uint16_t sum = v[x] + v[y];
-        // If the sum is greater than 255 (0xFF), there is a carry
         if (sum > 0xFF) {
           v[0xF] = 1;
         } else {
           v[0xF] = 0;
         }
-        // Keep only the lowest 8 bits and store in Vx
         v[x] = (sum & 0xFF);
         break;
       }
@@ -197,7 +195,7 @@ public:
       }
       break;
     }
-    case 0x9000: {
+    case 0x9000: { // 9xy0 - SNE Vx, Vy
       uint8_t x = (opcode & 0x0F00) >> 8;
       uint8_t y = (opcode & 0x00F0) >> 4;
       if (v[x] != v[y]) {
@@ -205,24 +203,24 @@ public:
       }
       break;
     }
-    case 0xA000: {
+    case 0xA000: { // Annn - LD I, addr
       uint16_t nnn = opcode & 0x0FFF;
       index = nnn;
       break;
     }
-    case 0xB000: {
+    case 0xB000: { // Bnnn - JP V0, addr
       uint16_t nnn = opcode & 0x0FFF;
       pc = nnn + v[0];
       break;
     }
-    case 0xC000: {
+    case 0xC000: { // Cxkk - RND Vx, byte
       uint8_t x = (opcode & 0x0F00) >> 8;
       uint8_t kk = (opcode & 0x00FF);
       uint8_t random_byte = rand() % 256;
       v[x] = random_byte & kk;
       break;
     }
-    case 0xD000: {
+    case 0xD000: { // Dxyn - DRW Vx, Vy, nibble
       uint8_t xPos = v[(opcode & 0x0F00) >> 8] % 64;
       uint8_t yPos = v[(opcode & 0x00F0) >> 4] % 32;
       uint8_t height = (opcode & 0x000F);
@@ -239,7 +237,6 @@ public:
           }
         }
       }
-      // Note: You'll need to tell your graphics library (SDL/Raylib) to redraw
       drawFlag = true;
       break;
     }
@@ -248,7 +245,7 @@ public:
       uint8_t variant = (opcode & 0x00FF);
 
       switch (variant) {
-      case 0x9E: { // Ex9E: Skip if key pressed
+      case 0x9E: { // Ex9E - SKP Vx
         if (key[v[x]] != 0) {
           pc += 2;
         }
@@ -327,8 +324,8 @@ public:
   };
 };
 
-// draw the chip8 screen (this is the drawer class lowkey used ai for this but
-// like its easy to understand)
+// draw the chip8 screen (this is the drawer(cuz he draws) lowkey used ai for
+// this but like its easy to understand)
 void drawGraphics(SDL_Renderer *renderer, unsigned char *gfx) {
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   SDL_RenderClear(renderer);
@@ -348,7 +345,7 @@ void drawGraphics(SDL_Renderer *renderer, unsigned char *gfx) {
 
   SDL_RenderPresent(renderer);
 }
-
+// it handles the input no shit
 void handleInput(chip8 &emulator, bool &running) {
   SDL_Event event;
 
