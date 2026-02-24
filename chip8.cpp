@@ -105,6 +105,7 @@ public:
       uint8_t x = (opcode & 0x0F00) >> 8;
       uint8_t kk = (opcode & 0x00FF);
       if (v[x] == kk) {
+        pc += 2;
       }
       break;
     }
@@ -167,7 +168,7 @@ public:
         break;
       }
       case 0x5: { // 8xy5 - SUB Vx, Vy
-        v[0xF] = (v[x] > v[y]) ? 1 : 0;
+        v[0xF] = (v[x] >= v[y]) ? 1 : 0;
         v[x] = v[x] - v[y];
         break;
       }
@@ -178,7 +179,7 @@ public:
         break;
       }
       case 0x7: { // 8xy7 SUBN Vx, Vy
-        if (v[y] > v[x]) {
+        if (v[y] >= v[x]) {
           v[0xF] = 1;
         } else {
           v[0xF] = 0;
@@ -279,7 +280,8 @@ public:
           }
         }
         if (!keyPressed)
-          return; // "Freeze" the PC by returning without incrementing
+          pc -= 2;
+        return; // "Freeze" the PC by returning without incrementing
         break;
       }
 
@@ -308,11 +310,13 @@ public:
       case 0x55: // Fx55: Store registers in memory
         for (int i = 0; i <= x; ++i)
           memory[index + i] = v[i];
+        index += x + 1;
         break;
 
       case 0x65: // Fx65: Load registers from memory
         for (int i = 0; i <= x; ++i)
           v[i] = memory[index + i];
+        index += x + 1;
         break;
       }
       break;
@@ -463,7 +467,7 @@ void handleInput(chip8 &emulator, bool &running) {
 int main() {
   chip8 emulator;
   emulator.initailize();
-  emulator.loadROM("PONG");
+  emulator.loadROM("INVADERS");
 
   SDL_Init(SDL_INIT_VIDEO);
 
