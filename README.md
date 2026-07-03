@@ -1,4 +1,4 @@
-HIEEEEE :3 this was my first time makeing a solo c++ project like this one so plesase forgive me if you find any errors.
+HIEEEEE :3 this was my first time making a solo c++ project like this one so plesase forgive me if you find any errors.
 
 
 # CHIP-8 Emulator
