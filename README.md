@@ -14,7 +14,7 @@ This emulator implements the core instruction set of the CHIP-8 virtual machine.
 To compile and run this project, you will need:
 
 * A C++ compiler (g++, clang, or MSVC)
-* [Insert Library Name, e.g., SDL2 or SFML] for graphics and input
+* SDL2 for graphics and input
 
 ## Installation and Usage
 
